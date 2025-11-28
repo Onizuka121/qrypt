@@ -1,6 +1,6 @@
 ## QRYPT Presentation 
 
-[Presentation](https://www.canva.com/design/DAG57FSPXQw/Ws0CiyLB5Fm88C9JCYcSDg/view?utlId=h601e41a04c#4)
+[Presentation](https://www.canva.com/design/DAG57FSPXQw/Ws0CiyLB5Fm88C9JCYcSDg/view?utlId=h601e41a04c#1)
 
 ## Foundry
 
