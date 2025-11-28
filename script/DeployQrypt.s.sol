@@ -6,9 +6,11 @@ import "../src/QryptGiftCard.sol";
 
 contract DeployQrypt is Script {
     function run() external {
-        uint256 pk = vm.envUint("PRIVATE_KEY");
+
+        uint256 pk = vm.envUint("PRIVATE_KEY_JOHN");
         vm.startBroadcast(pk);
         QryptGiftCard q = new QryptGiftCard();
+        
         vm.stopBroadcast();
 
         console2.log("QryptGiftCard deployed at:", address(q));

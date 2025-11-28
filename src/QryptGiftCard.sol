@@ -34,13 +34,6 @@ contract QryptGiftCard {
         uint256 amount
     );
 
-//creaiamo/specifichiamo l'evento di quando chi ha creato la gift card viene rimborsato (annulla la gift)
-    event GiftRefunded(
-        uint256 indexed giftId,
-        address indexed sender,
-        uint256 amount
-    );
-
     // definiamo ora la funzione che crerà effettivamente la gift card 
     //specifichiamo inoltre che questa funzione dovra ritornare l'id della gift card creata
     function createGiftCard(
@@ -55,9 +48,9 @@ contract QryptGiftCard {
         //controlliamo che l'indirizzo del wallet effimero non sia vuoto 
         require(ephemeralWallet != address(0), "Ephemeral wallet obbligatorio");
         
-        //assegnamo l'ultimo id della gift utilizzato +1
-        giftId = lastGiftId+1;
-
+        //assegnamo l'ultimo id della gift utilizzato +1 e aggiorniamo
+        lastGiftId = lastGiftId+1;
+        giftId = lastGiftId;
         //creiamo ora una nuovo "elemento" gift card e lo mettiamo nella "mappa" delle gift card 
         // per tenere traccia 
         // inoltre passiamo tutti i dati della nuova gift card
@@ -141,56 +134,57 @@ contract QryptGiftCard {
     
         //ps: per la parte UI possiamo "ascoltare" questa parte
         // per aggiornare che la gift è stata ritirata o far scattare l'invio di un messaggio di feedback
-
-
+        
     }
 
-    
 
-    
-    function refund(uint256 giftId) external {
-        GiftCard storage g = gifts[giftId];
 
-        require(msg.sender == g.sender, "Solo il creatore puo' richiedere il rimborso");
-        require(!g.claimed, "Gia' riscattata o rimborsata");
-        require(g.amount > 0, "Importo nullo");
-
-        g.claimed = true;
-        uint256 amount = g.amount;
-        g.amount = 0;
-
-        (bool ok, ) = payable(g.sender).call{value: amount}("");
-        require(ok, "Rimborso fallito");
-
-        emit GiftRefunded(giftId, g.sender, amount);
-    }
-
+    // definiamo la funzione che ci permetta di capire chi ha firmato (indirizzo) 
+    // data una firma ed un messaggio
+    // quindi questa funzione prende in input 
+    // un messaggio e una firma 
     function _recoverSigner(
         bytes32 message,
         bytes memory firma
     ) internal pure returns (address) {
+        // la firma in questione è una firma composta da 65 bytes
         require(firma.length == 65, "Firma non valida");
 
         bytes32 ethSignedMessage = keccak256(
             abi.encodePacked("\x19Ethereum Signed Message:\n32", message)
         );
 
+    // forma della firma in memoria (è un array) :  
+    // - 32 bytes per la lunghezza 
+    // - 32 bytes per r 
+    // - 32 bytes per s 
+    // - 1 byte per v 
+
+    // dichiarazioni delle componenti di una firma 
         bytes32 r;
         bytes32 s;
         uint8 v;
 
+    // ora dobbiamo estrarre i bytes dalla firma
         assembly {
             r := mload(add(firma, 32))
             s := mload(add(firma, 64))
             v := byte(0, mload(add(firma, 96)))
         }
 
+
+    // checks consigliati dai docs Etherium
         if (v < 27) {
             v += 27;
         }
-
         require(v == 27 || v == 28, "Valore v non valido");
 
         return ecrecover(ethSignedMessage, v, r, s);
     }
+
+    // docs usato https://ethvigil.com/docs/eth_sign_example_code/
+
+
 }
+
+

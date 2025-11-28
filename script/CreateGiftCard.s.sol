@@ -6,55 +6,42 @@ import "../src/QryptGiftCard.sol";
 
 contract CreateGiftCard is Script {
     function run() external {
-        uint256 pk = vm.envUint("PRIVATE_KEY"); // Alice
-        address alice = vm.addr(pk);
+        uint256 pk_john = vm.envUint("PRIVATE_KEY_JOHN");
+        //calcoliamo indirizzo di Johnnnn
+        address john = vm.addr(pk_john);
 
         address contractAddress = vm.envAddress("C_ADDR");
+        //creiamo istanza per usare il contract 
         QryptGiftCard q = QryptGiftCard(contractAddress);
 
-        string memory secret = "hackathon-secret-123";
-        bytes32 secretHash = keccak256(abi.encodePacked(secret));
+        string memory segreto = "hackathon-segreto-123";
+        bytes32 segretoHash = keccak256(abi.encodePacked(segreto));
 
+        // private key per indirizzo del wallet effimero SEMPLIFICATA (per demo) 
         uint256 ephPrivKey = 0xBEEF;
+        //calc indirizzo del wallet effimero
         address ephAddr = vm.addr(ephPrivKey);
 
-        vm.startBroadcast(pk);
-
-        uint64 durationSeconds = 3600;
+        //contract firmato come John
+        vm.startBroadcast(pk_john);
+        //IMPORTO
         uint256 amount = 0.1 ether;
-
+        //crea gift card
         uint256 giftId = q.createGiftCard{value: amount}(
-            secretHash,
-            ephAddr,
-            durationSeconds
+            segretoHash,
+            ephAddr
         );
-
+        //fine transaction
         vm.stopBroadcast();
 
-        console2.log("=== QRYPT GIFT CARD DATA ===");
-        console2.log("Alice (sender):", alice);
+        console2.log("------------------------------ DATA ---------------------");
+        console2.log("John (sender):", john);
         console2.log("Contract:", contractAddress);
         console2.log("GiftId:", giftId);
-        console2.log("Secret:", secret);
-        console2.log("Ephemeral private key (decimale):");
+        console2.log("segreto:", segreto);
+        console2.log("Ephemeral private key:");
         console2.logUint(ephPrivKey);
         console2.log("Ephemeral address:", ephAddr);
 
-        console2.log("JSON payload:");
-        console2.log(
-            string(
-                abi.encodePacked(
-                    "{\"contractAddress\":\"",
-                    vm.toString(contractAddress),
-                    "\",\"giftId\":\"",
-                    vm.toString(giftId),
-                    "\",\"secret\":\"",
-                    secret,
-                    "\",\"ephemeralPrivKey\":\"",
-                    vm.toString(ephPrivKey),
-                    "\"}"
-                )
-            )
-        );
     }
 }
