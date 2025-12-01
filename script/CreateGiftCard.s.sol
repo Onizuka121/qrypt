@@ -34,7 +34,7 @@ contract CreateGiftCard is Script {
         //fine transaction
         vm.stopBroadcast();
 
-        console2.log("------------------------------ DATA ---------------------");
+        console2.log("------------------------------ DATI GENERATI ---------------------");
         console2.log("John (sender):", john);
         console2.log("Contract:", contractAddress);
         console2.log("GiftId:", giftId);
