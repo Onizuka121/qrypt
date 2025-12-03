@@ -2,6 +2,10 @@
 
 [Presentation](https://www.canva.com/design/DAG57FSPXQw/Ws0CiyLB5Fm88C9JCYcSDg/view?utlId=h601e41a04c#1)
 
+A peer-to-peer payment system on Avalanche that replaces wallet addresses with secret codes. Send crypto without asking for addresses—just share a secret code via chat, QR, or any medium.
+
+> Hackathon Project – Built during a 24-hour Avalanche hackathon
+
 ## Foundry
 
 **Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
