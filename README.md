@@ -9,27 +9,18 @@ QRYPT is a peer-to-peer payment system on Avalanche that replaces wallet address
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [How It Works](#how-it-works)
-  - [1. Create a gift card](#1-create-a-gift-card)
-  - [2. Share the QR / payload](#2-share-the-qr--payload)
-  - [3. Redeem the funds](#3-redeem-the-funds)
-- [Smart Contract Design](#smart-contract-design)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Build & Test](#build--test)
-  - [Local Development (Anvil)](#local-development-anvil)
-  - [Deploying to Avalanche](#deploying-to-avalanche)
-- [Usage Examples](#usage-examples)
-  - [Create a gift card](#create-a-gift-card)
-  - [Redeem a gift card](#redeem-a-gift-card)
-  - [Refund a gift card](#refund-a-gift-card)
-- [Security Notes](#security-notes)
-- [Roadmap / Ideas](#roadmap--ideas)
-- [License](#license)
+* [Overview](#overview)
+* [Key Features](#key-features)
+* [How It Works](#how-it-works)
+  * [1. Create a gift card](#1-create-a-gift-card)
+  * [2. Share the QR / payload](#2-share-the-qr--payload)
+  * [3. Redeem the funds](#3-redeem-the-funds)
+* [Smart Contract Design](#smart-contract-design)
+* [Getting Started](#getting-started)
+  * [1. Environment Setup](#1-environment-setup)
+  * [2. Contract Deployment](#2-contract-deployment)
+  * [3. Gift Card Creation](#3-gift-card-creation)
+  * [4. Gift Card Redemption](#4-gift-card-redemption)
 
 ---
 
@@ -47,14 +38,14 @@ This repository contains the **Solidity smart contract** and **Foundry tooling**
 
 ## Key Features
 
-- 🎁 **Gift-card–style transfers** – Send AVAX without asking for the recipient’s address in advance.
-- 🔒 **On-chain 2FA** – Each gift is protected by:
+- **Gift-card–style transfers** – Send AVAX without asking for the recipient’s address in advance.
+- **On-chain 2FA** – Each gift is protected by:
   - a **secret** (known only to sender + receiver),
   - an **ephemeral wallet** (private key embedded in the QR/payload).
-- 🛡 **Front-running resistance** – An attacker who only sees the secret in the mempool cannot redeem the funds without the ephemeral private key.
-- 💸 **Refunds** – If a gift is not redeemed (or after an optional expiry), the sender can reclaim their funds.
-- 📡 **Event-driven** – Creation, redemption and refunds emit events for easy indexing and frontend integration.
-- 🌉 **Avalanche-ready** – Designed for Avalanche C-Chain / Fuji, but works on any EVM-compatible network.
+- **Front-running resistance** – An attacker who only sees the secret in the mempool cannot redeem the funds without the ephemeral private key.
+- **Refunds** – If a gift is not redeemed (or after an optional expiry), the sender can reclaim their funds.
+- **Event-driven** – Creation, redemption and refunds emit events for easy indexing and frontend integration.
+- **Avalanche-ready** – Designed for Avalanche C-Chain / Fuji, but works on any EVM-compatible network.
 
 ---
 
@@ -152,195 +143,124 @@ Events let off-chain indexers and frontends build a full history of created / re
 
 ---
 
-## Project Structure
+# Getting Started
 
-The repository follows a standard Foundry layout:
+This section outlines the end-to-end execution flow for deploying, initializing, and redeeming QRYPT gift cards using the provided Foundry scripts.
+All commands target Avalanche Fuji by default but are compatible with any EVM-based network.
 
-```text
-.
-├── src/                # Solidity contracts (QRYPT core logic)
-│   └── QryptGiftCard.sol
-├── script/             # Deployment and interaction scripts
-│   ├── DeployQrypt.s.sol
-│   └── RedeemGiftCard.s.sol
-├── broadcast/          # Forge broadcast logs (per-network deployment outputs)
-├── lib/                # External libraries (e.g. forge-std)
-├── test/               # Contract tests (if present)
-├── foundry.toml        # Foundry configuration
-├── foundry.lock        # Lockfile for dependencies
-└── README.md           # You are here
-Note: the exact filenames may vary depending on the version you are looking at, but the overall structure is standard Foundry.
+---
 
-Getting Started
-Prerequisites
-Foundry (Forge, Cast, Anvil)
+## 1. Environment Setup
 
-A working Avalanche RPC endpoint (Fuji testnet or C-Chain mainnet)
+Ensure the following components are available in your environment:
 
-A funded EOA private key for deploying (for testnet, faucet AVAX is enough)
+### **Foundry Toolchain**
 
-Installation
-bash
-Copia codice
-git clone https://github.com/Onizuka121/qrypt.git
-cd qrypt
+Install and update:
 
-# Install Foundry dependencies (if using git submodules / forge-std)
-forge install
-If the project uses git submodules for lib/, also run:
+```bash
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+```
 
-bash
-Copia codice
-git submodule update --init --recursive
-Build & Test
-bash
-Copia codice
-# Compile contracts
-forge build
+### **Network Configuration**
 
-# Run tests
-forge test
-Local Development (Anvil)
-To experiment locally:
+```bash
+export RPC_URL="https://api.avax-test.network/ext/bc/C/rpc"
+```
 
-bash
-Copia codice
-# Start a local EVM node
-anvil
+### **Operator Keys**
 
-# In another terminal, deploy the contract to Anvil
+Define two funded test accounts:
+
+```bash
+export PRIVATE_KEY_JOHN=0x<sender_private_key>   # gift creator
+export PRIVATE_KEY_BOB=0x<recipient_private_key> # gift redeemer
+```
+
+Each must hold sufficient AVAX to cover transactions.
+
+---
+
+## 2. Contract Deployment
+
+Deploy the QryptGiftCard contract using John’s key:
+
+```bash
 forge script script/DeployQrypt.s.sol:DeployQrypt \
-  --rpc-url http://127.0.0.1:8545 \
-  --private-key <ANVIL_PRIVATE_KEY> \
-  --broadcast
-Replace <ANVIL_PRIVATE_KEY> with one of the keys printed by Anvil.
+  --rpc-url $RPC_URL \
+  --broadcast \
+  -vvvv
+```
 
-Deploying to Avalanche
-Example deployment to Avalanche Fuji:
+The script outputs:
 
-bash
-Copia codice
-export RPC_URL_FUJI="https://api.avax-test.network/ext/bc/C/rpc"
-export PRIVATE_KEY_DEPLOYER="0x..."
+```
+QryptGiftCard deployed at: 0x<address>
+```
 
-forge script script/DeployQrypt.s.sol:DeployQrypt \
-  --rpc-url $RPC_URL_FUJI \
-  --private-key $PRIVATE_KEY_DEPLOYER \
-  --broadcast
-After deployment, copy the contract address from the Forge broadcast output; it will be used by frontends, scripts, or QR payloads.
+Register the deployed instance:
 
-Usage Examples
-Below are high-level examples using Forge scripts; exact names may differ depending on your version.
+```bash
+export C_ADDR=0x<address>
+```
 
-Create a gift card
-A sample script might:
+---
 
-Read env variables:
+## 3. Gift Card Creation
 
-PRIVATE_KEY_ALICE
+Initialize a gift card using John’s wallet:
 
-SECRET
-
-EPHEMERAL_PRIVKEY
-
-Compute secretHash and ephemeralWallet.
-
-Call createGiftCard with msg.value = amount.
-
-Run it with:
-
-bash
-Copia codice
+```bash
 forge script script/CreateGiftCard.s.sol:CreateGiftCard \
-  --rpc-url $RPC_URL_FUJI \
-  --private-key $PRIVATE_KEY_ALICE \
-  --broadcast
-The script can log a JSON payload that you can encode as a QR code.
+  --rpc-url $RPC_URL \
+  --broadcast \
+  -vvvv
+```
 
-Redeem a gift card
-The RedeemGiftCard script typically:
+The script returns key parameters:
 
-Reads:
+```
+GiftId: <GIFT_ID>
+segreto: <SECRET>
+Ephemeral private key: <EPHEMERAL_PRIVKEY>
+Ephemeral address: <EPHEMERAL_ADDRESS>
+```
 
-CONTRACT_ADDRESS
+Expose these as environment variables for redemption:
 
-GIFT_ID
+```bash
+export GIFT_ID=<GIFT_ID>
+export SEGRETO="<SECRET>"
+export EPHEMERAL_PRIVKEY=<EPHEMERAL_PRIVKEY>
+```
 
-SECRET
+> **Note:** The demo script uses fixed secrets and ephemeral keys for reproducibility.
+> Production-grade flows must dynamically generate and protect these values client-side.
 
-EPHEMERAL_PRIVKEY
+---
 
-PRIVATE_KEY_BOB
+## 4. Gift Card Redemption
 
-Rebuilds the message hash, signs it with the ephemeral private key, and calls redeem.
+Redeem the gift card using Bob’s wallet:
 
-Example:
-
-bash
-Copia codice
+```bash
 forge script script/RedeemGiftCard.s.sol:RedeemGiftCard \
-  --rpc-url $RPC_URL_FUJI \
-  --private-key $PRIVATE_KEY_BOB \
-  --broadcast
-After confirmation, Bob’s wallet should receive the AVAX.
+  --rpc-url $RPC_URL \
+  --broadcast \
+  -vvvv
+```
 
-Refund a gift card
-A simple RefundGiftCard script can:
+The redeem script:
 
-Read:
+* Reconstructs the expected `QRYPT_REDEEM` signed payload
+* Signs it using the ephemeral private key
+* Calls `redeem()` on-chain on behalf of Bob
 
-CONTRACT_ADDRESS
+Upon success, Bob receives the transferred AVAX.
 
-GIFT_ID
+You may verify the resulting balance:
 
-PRIVATE_KEY_ALICE
-
-Call refund(giftId) from the sender.
-
-Only eligible gifts (not yet claimed and, if expiry is used, expired) will be successfully refunded.
-
-Security Notes
-Experimental / Hackathon code – QRYPT was built as a hackathon prototype and has not been professionally audited.
-
-Use at your own risk – Do not use this code as-is to secure significant real-world funds.
-
-Threat model – The design specifically aims to mitigate:
-
-simple mempool front-running on the secret,
-
-trivial theft of claim codes shared off-chain.
-
-It does not protect against a compromised device, stolen QR/payload, malicious frontends, or sophisticated on-chain attacks.
-
-Before any production use, the contract should undergo:
-
-a full security review,
-
-additional testing and fuzzing,
-
-possibly formal verification and professional auditing.
-
-Roadmap / Ideas
-Potential future work includes:
-
-A production-ready frontend with:
-
-QR generation and scanning,
-
-history of created / redeemed / refunded gifts,
-
-better UX around status and errors.
-
-Telegram / bot integrations for giveaways and rewards.
-
-Multi-chain support (other EVM chains).
-
-Extended claim conditions (e.g. time locks, whitelists, claim limits).
-
-License
-The license for this project has not been specified yet.
-Before open-sourcing or using this code in production, add a LICENSE file (for example MIT, Apache-2.0, etc.) according to your needs.
-
-makefile
-Copia codice
-::contentReference[oaicite:0]{index=0}
+```bash
+cast balance $(cast wallet address --private-key $PRIVATE_KEY_BOB) --rpc-url $RPC_URL
+```
