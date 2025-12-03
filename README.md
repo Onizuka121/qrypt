@@ -1,4 +1,6 @@
-# QRYPT
+<p align="center">
+  <img src="download.png" width="400">
+</p>
 
 **Secure, frictionless crypto transfers via QR codes.**  
 QRYPT is a peer-to-peer payment system on Avalanche that replaces wallet addresses with secret codes. Send crypto without asking for addresses — just share a QR / payload and let the recipient redeem it.
